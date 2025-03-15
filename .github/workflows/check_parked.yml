@@ -24,6 +24,9 @@ jobs:
               "${url}/scripts/check_parked.sh" -o check_parked.sh
 
             curl -sSL --retry 2 --retry-all-errors \
+              "${url}/config/parked_terms.txt" -o parked_terms.txt
+
+            curl -sSL --retry 2 --retry-all-errors \
               "${url}/data/parked_domains.txt" -o PARKED_DOMAINS.txt
 
             curl -sSL --retry 2 --retry-all-errors \
