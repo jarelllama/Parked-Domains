@@ -1,0 +1,50 @@
+name: Check parked domains
+run-name: Check parked domains
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * *'
+permissions:
+  contents: write
+
+jobs:
+  check-parked-domains:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Get files
+        run: |
+            url='https://raw.githubusercontent.com/jarelllama/Scam-Blocklist/refs/heads/main'
+
+            curl -sSL --retry 2 --retry-all-errors \
+              "${url}/scripts/check_parked.sh" -o check_parked.sh
+
+            curl -sSL --retry 2 --retry-all-errors \
+              "${url}/data/parked_domains.txt" -o PARKED_DOMAINS.txt
+
+            curl -sSL --retry 2 --retry-all-errors \
+              "${url}/data/raw.txt" -o RAW.txt
+
+      - name: Check for unparked domains
+        run: bash check_parked.sh --check-unparked PARKED_DOMAINS.txt
+
+      - name: Check for parked domains (part 1)
+        run: bash check_parked.sh --check-parked-part-1 RAW.txt
+
+      - name: Check for parked domains (part 2)
+        run: bash check_parked.sh --check-parked-part-2 RAW.txt
+
+      - name: Cleanup
+        run: rm PARKED_DOMAINS.txt RAW.txt
+
+      - name: Push
+        run: |
+          git config user.email ${{ vars.GIT_EMAIL }}
+          git config user.name ${{ vars.GIT_USERNAME }}
+          git add .
+          git diff-index --quiet HEAD || git commit -m "$(date +"%d-%m-%Y %H:%M:%S")"
+          git push -q
