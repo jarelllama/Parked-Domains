@@ -34,7 +34,8 @@ jobs:
           git diff-index --quiet HEAD || git commit -m "$(date +"%d-%m-%Y")"
           git push -q
 
-  check-unparked-domains:
+  check-unparked:
+    needs: get-files
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -59,6 +60,7 @@ jobs:
           git push -q
 
   check-parked-part-1:
+    needs: check-unparked
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -83,6 +85,7 @@ jobs:
           git push -q
 
   check-parked-part-2:
+    needs: check-parked-part-1
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
