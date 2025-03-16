@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 jobs:
-  check-parked-domains:
+  get-files:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -16,38 +16,92 @@ jobs:
         with:
           ref: main
 
-      - name: Get files
+      - name: Get script and parked terms
         run: |
-            url='https://raw.githubusercontent.com/jarelllama/Scam-Blocklist/refs/heads/main'
+          curl -sSL --retry 2 --retry-all-errors \
+            "${{ vars.SCAM_BLOCKLIST_URL }}/scripts/check_parked.sh" \
+            -o check_parked.sh
 
-            curl -sSL --retry 2 --retry-all-errors \
-              "${url}/scripts/check_parked.sh" -o check_parked.sh
-
-            curl -sSL --retry 2 --retry-all-errors \
-              "${url}/config/parked_terms.txt" -o parked_terms.txt
-
-            curl -sSL --retry 2 --retry-all-errors \
-              "${url}/data/parked_domains.txt" -o PARKED_DOMAINS.txt
-
-            curl -sSL --retry 2 --retry-all-errors \
-              "${url}/data/raw.txt" -o RAW.txt
-
-      - name: Check for unparked domains
-        run: bash check_parked.sh --check-unparked PARKED_DOMAINS.txt
-
-      - name: Check for parked domains (part 1)
-        run: bash check_parked.sh --check-parked-part-1 RAW.txt
-
-      - name: Check for parked domains (part 2)
-        run: bash check_parked.sh --check-parked-part-2 RAW.txt
-
-      - name: Cleanup
-        run: rm PARKED_DOMAINS.txt RAW.txt
+          curl -sSL --retry 2 --retry-all-errors \
+            "${{ vars.SCAM_BLOCKLIST_URL }}/config/parked_terms.txt" \
+            -o parked_terms.txt
 
       - name: Push
         run: |
           git config user.email ${{ vars.GIT_EMAIL }}
           git config user.name ${{ vars.GIT_USERNAME }}
           git add .
-          git diff-index --quiet HEAD || git commit -m "$(date +"%d-%m-%Y %H:%M:%S")"
+          git diff-index --quiet HEAD || git commit -m "$(date +"%d-%m-%Y")"
+          git push -q
+
+  check-unparked-domains:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Check for unparked domains
+        run: |
+          curl -sSL --retry 2 --retry-all-errors \
+            "${{ vars.SCAM_BLOCKLIST_URL }}/data/parked_domains.txt" \
+            -o parked_domains.tmp
+
+          bash check_parked.sh --check-unparked parked_domains.tmp
+
+      - name: Push
+        run: |
+          git config user.email ${{ vars.GIT_EMAIL }}
+          git config user.name ${{ vars.GIT_USERNAME }}
+          git add .
+          git diff-index --quiet HEAD || git commit -m "$(date +"%d-%m-%Y")"
+          git push -q
+
+  check-parked-part-1:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Check for parked domains (part 1)
+        run: |
+          curl -sSL --retry 2 --retry-all-errors \
+            "${{ vars.SCAM_BLOCKLIST_URL }}/data/raw.txt" \
+            -o raw.tmp
+
+          bash check_parked.sh --check-parked-part-1 raw.tmp
+
+      - name: Push
+        run: |
+          git config user.email ${{ vars.GIT_EMAIL }}
+          git config user.name ${{ vars.GIT_USERNAME }}
+          git add .
+          git diff-index --quiet HEAD || git commit -m "$(date +"%d-%m-%Y")"
+          git push -q
+
+  check-parked-part-2:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Check for parked domains (part 2)
+        run: |
+          curl -sSL --retry 2 --retry-all-errors \
+            "${{ vars.SCAM_BLOCKLIST_URL }}/data/raw.txt" \
+            -o raw.tmp
+
+          bash check_parked.sh --check-parked-part-2 raw.tmp
+
+      - name: Push
+        run: |
+          git config user.email ${{ vars.GIT_EMAIL }}
+          git config user.name ${{ vars.GIT_USERNAME }}
+          git add .
+          git diff-index --quiet HEAD || git commit -m "$(date +"%d-%m-%Y")"
           git push -q
