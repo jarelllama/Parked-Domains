@@ -108,3 +108,28 @@ jobs:
           git add .
           git diff-index --quiet HEAD || git commit -m "Get parked domains (part 2)"
           git push -q
+
+  check-parked-part-3:
+    needs: check-parked-part-2
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Check for parked domains (part 3)
+        run: |
+          curl -sSL --retry 2 --retry-all-errors \
+            "${{ vars.SCAM_BLOCKLIST_URL }}/data/raw.txt" \
+            -o raw.tmp
+
+          bash check_parked.sh --check-parked-part-3 raw.tmp
+
+      - name: Push
+        run: |
+          git config user.email ${{ vars.GIT_EMAIL }}
+          git config user.name ${{ vars.GIT_USERNAME }}
+          git add .
+          git diff-index --quiet HEAD || git commit -m "Get parked domains (part 3)"
+          git push -q
