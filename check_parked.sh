@@ -39,7 +39,7 @@ main() {
             sort -u parked.tmp -o parked_domains.txt
             ;;
 
-        --check-parked-part-?)
+        --check-parked-part-[1-"${PARTS}"])
             # Split the file into parts for each run
             split -n l/"$PARTS" --numeric-suffixes=1 --suffix-length=1 \
                 --additional-suffix=.tmp "$FILE" part
@@ -91,6 +91,7 @@ find_parked_in() {
     find_parked x12 & find_parked x13 & find_parked x14 & find_parked x15 &
     find_parked x16 & find_parked x17 & find_parked x18 & find_parked x19
     wait
+    rm x??
 
     # Create files to avoid not found errors
     touch parked_domains_xxx.tmp errored_domains_xxx.tmp
@@ -170,6 +171,6 @@ error() {
 
 set -e
 
-trap 'rm ./*.tmp x?? 2> /dev/null || true' EXIT
+trap 'rm ./*.tmp 2> /dev/null || true' EXIT
 
 main "$1" "$2"
